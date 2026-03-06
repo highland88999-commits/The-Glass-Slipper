@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Glass Slipper Portal - Olympus Monsterverse</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #000; font-family: 'Courier New', Courier, monospace; }
+        #ui {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #0f0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-shadow: 0 0 5px #0f0;
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: #0f0;
+            text-align: center;
+        }
+        #modal-content {
+            background: #111;
+            padding: 20px;
+            border: 2px solid #0f0;
+            max-width: 600px;
+            box-shadow: 0 0 20px #0f0;
+        }
+        #modal-content a {
+            color: #00ff44;
+            text-decoration: none;
+            display: block;
+            margin: 10px 0;
+        }
+        #modal-content a:hover { text-shadow: 0 0 10px #00ff44; }
+        canvas { cursor: pointer; } /* Hint interactivity */
+    </style>
+</head>
+<body>
+    <div id="ui">System: Portal_Active // Protocol: Olympus_Slipper // Click to Enter Realms</div>
+    <div id="modal">
+        <div id="modal-content">
+            <h2>Portal to All Shoes Unlocked</h2>
+            <p>Step through to sustainable realms. Partnerships forge the future.</p>
+            <div id="partners"></div>
+            <button onclick="closeModal()">Return to Hall</button>
+        </div>
+    </div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- SCENE SETUP ---
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x050505, 0.12); // Softer fog
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+        document.body.appendChild(renderer.domElement);
+
+        // --- MATERIALS ---
+        const stoneMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9 });
+        const carpetMat = new THREE.MeshStandardMaterial({ color: 0x880000, roughness: 0.8 });
+        const glassMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0,
+            roughness: 0.05,
+            transmission: 1.0,
+            thickness: 0.8,
+            ior: 1.52,
+            emissive: 0x00ff44,
+            emissiveIntensity: 0.15,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.0
+        });
+
+        // --- ROOM ---
+        const floorGeo = new THREE.PlaneGeometry(20, 40);
+        const floor = new THREE.Mesh(floorGeo, stoneMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const carpetGeo = new THREE.PlaneGeometry(4, 40);
+        const carpet = new THREE.Mesh(carpetGeo, carpetMat);
+        carpet.rotation.x = -Math.PI / 2;
+        carpet.position.y = 0.01;
+        carpet.receiveShadow = true;
+        scene.add(carpet);
+
+        // --- STAND ---
+        const standGroup = new THREE.Group();
+        const baseGeo = new THREE.CylinderGeometry(1.2, 1.5, 0.5, 32);
+        const base = new THREE.Mesh(baseGeo, stoneMat);
+        base.position.y = 0.25;
+        base.castShadow = true;
+        standGroup.add(base);
+
+        const pillarGeo = new THREE.CylinderGeometry(0.8, 0.8, 2, 32);
+        const pillar = new THREE.Mesh(pillarGeo, stoneMat);
+        pillar.position.y = 1.5;
+        pillar.castShadow = true;
+        standGroup.add(pillar);
+
+        const topGeo = new THREE.CylinderGeometry(1.2, 1.2, 0.2, 32);
+        const top = new THREE.Mesh(topGeo, stoneMat);
+        top.position.y = 2.5;
+        standGroup.add(top);
+        scene.add(standGroup);
+
+        // --- GLASS SLIPPER (Improved Shape) ---
+        const slipperGroup = new THREE.Group();
+        // Toe
+        const toeGeo = new THREE.SphereGeometry(0.45, 24, 12);
+        const toe = new THREE.Mesh(toeGeo, glassMat);
+        toe.position.set(0.4, 0, 0);
+        toe.scale.set(1.4, 0.7, 1.1);
+        slipperGroup.add(toe);
+        // Body
+        const bodyGeo = new THREE.CylinderGeometry(0.28, 0.35, 1.1, 24, 1, true);
+        const body = new THREE.Mesh(bodyGeo, glassMat);
+        body.rotation.z = Math.PI / 2;
+        body.position.set(-0.1, 0, 0);
+        slipperGroup.add(body);
+        // Heel
+        const heelGeo = new THREE.CylinderGeometry(0.22, 0.4, 0.35, 24);
+        const heel = new THREE.Mesh(heelGeo, glassMat);
+        heel.position.set(-0.7, -0.1, 0);
+        heel.rotation.z = Math.PI / 10;
+        slipperGroup.add(heel);
+
+        slipperGroup.position.y = 2.8;
+        slipperGroup.rotation.z = Math.PI / 5;
+        scene.add(slipperGroup);
+
+        // --- LIGHTING ---
+        const ambLight = new THREE.AmbientLight(0x404040, 0.5);
+        scene.add(ambLight);
+
+        const chandelier = new THREE.PointLight(0xffaa00, 10, 20);
+        chandelier.position.set(0, 10, 0);
+        scene.add(chandelier);
+
+        const greenLight = new THREE.SpotLight(0x00ff44, 50);
+        greenLight.position.set(0, 5, 2);
+        greenLight.target = slipperGroup;
+        greenLight.angle = Math.PI / 6;
+        greenLight.castShadow = true;
+        scene.add(greenLight);
+
+        for(let i = -2; i <= 2; i++) {
+            const neon = new THREE.PointLight(0x00ffff, 5, 10);
+            neon.position.set( (i % 2 === 0 ? 9 : -9), 2, i * 5);
+            scene.add(neon);
+        }
+
+        camera.position.set(0, 4, 10);
+        camera.lookAt(0, 2, 0);
+
+        // --- INTERACTIVITY (Raycaster for Click) ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let INTERSECTED;
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onClick(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(slipperGroup.children, true);
+
+            if (intersects.length > 0) {
+                // Portal effect: quick particle burst
+                createPortalParticles();
+                //
