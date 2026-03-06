@@ -198,4 +198,117 @@
             if (intersects.length > 0) {
                 // Portal effect: quick particle burst
                 createPortalParticles();
-                //
+                // Show modal
+                showModal();
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('click', onClick);
+
+        // --- PORTAL PARTICLES ---
+        function createPortalParticles() {
+            const particleGeo = new THREE.BufferGeometry();
+            const positions = [];
+            for (let i = 0; i < 500; i++) {
+                positions.push((Math.random() - 0.5) * 2);
+                positions.push((Math.random() - 0.5) * 2 + 2.8);
+                positions.push((Math.random() - 0.5) * 2);
+            }
+            particleGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            const particleMat = new THREE.PointsMaterial({ color: 0x00ff44, size: 0.05, transparent: true });
+            const particles = new THREE.Points(particleGeo, particleMat);
+            scene.add(particles);
+
+            // Animate burst out
+            let opacity = 1;
+            const particleAnim = setInterval(() => {
+                opacity -= 0.05;
+                particleMat.opacity = opacity;
+                if (opacity <= 0) {
+                    scene.remove(particles);
+                    clearInterval(particleAnim);
+                }
+            }, 50);
+        }
+
+        // --- MODAL LOGIC ---
+        const partners = [
+            { name: 'Allbirds Realm', url: 'https://www.allbirds.com/' },
+            { name: 'KEEN Domain', url: 'https://www.keenfootwear.ca/' },
+            { name: 'Veja Path', url: 'https://www.veja-store.com/' },
+            { name: 'Hybrid Green Gate', url: 'https://hybridgreenlabel.com/' },
+            { name: 'Cariuma Trail', url: 'https://cariuma.com/' },
+            { name: 'ALOHAS Oasis', url: 'https://alohas.com/en-us' },
+            { name: 'Reformation Empire', url: 'https://www.thereformation.com/' },
+            { name: 'LØCI Labyrinth', url: 'https://lociwear.com/' },
+            { name: 'Sézane Sanctuary', url: 'https://www.sezane.com/us' },
+            { name: 'VIVAIA Vortex', url: 'https://vivaia.com/' },
+            { name: 'Quince Quest', url: 'https://www.quince.com/' },
+            { name: 'Zou Xou Zenith', url: 'https://www.zouxou.com/' },
+            { name: 'P448 Pinnacle', url: 'https://p448.com/' },
+            { name: 'On Running Odyssey', url: 'https://www.on.com/en-us' },
+            { name: 'Thousand Fell Throne', url: 'https://www.thousandfell.com/' },
+            { name: 'ABLE Abyss', url: 'https://www.ableclothing.com/' },
+            { name: 'Thesus Outdoors Tempest', url: 'https://thesusoutdoors.com/' }
+            // Add more as partnerships come: { name: 'New Partner Realm', url: 'https://example.com' }
+        ];
+
+        function showModal() {
+            const partnersDiv = document.getElementById('partners');
+            partnersDiv.innerHTML = '';
+            partners.forEach(p => {
+                const link = document.createElement('a');
+                link.href = p.url;
+                link.target = '_blank';
+                link.textContent = `Enter ${p.name} →`;
+                partnersDiv.appendChild(link);
+            });
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+        window.closeModal = closeModal; // Global for button
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            slipperGroup.rotation.y += 0.008; // Regal pace
+
+            const time = Date.now() * 0.0008;
+            slipperGroup.position.y = 2.8 + Math.sin(time * 1.2) * 0.08;
+            slipperGroup.rotation.x = Math.sin(time * 0.7) * 0.03;
+
+            greenLight.intensity = 40 + Math.sin(time * 3) * 10; // Pulse
+
+            // Hover check (scale up on mouse over)
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(slipperGroup.children, true);
+            if (intersects.length > 0) {
+                if (!INTERSECTED) {
+                    INTERSECTED = true;
+                    slipperGroup.scale.set(1.05, 1.05, 1.05);
+                }
+            } else {
+                if (INTERSECTED) {
+                    INTERSECTED = false;
+                    slipperGroup.scale.set(1, 1, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
