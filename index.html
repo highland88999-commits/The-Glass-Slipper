@@ -160,8 +160,15 @@ controls.minDistance = 2;
 controls.maxDistance = 120;
 
 // ────────────────────────────────────────────────
-// Dynamic Video Texture Pipeline
+// Dynamic Video & Image Texture Pipeline
 // ────────────────────────────────────────────────
+const textureLoader = new THREE.TextureLoader();
+const pedestalTex = textureLoader.load('https://file.garden/alXjUY_coXedLaNA/56c36b6aedc4ab5f3e25655d9f4a8777.jpeg');
+pedestalTex.colorSpace = THREE.SRGBColorSpace;
+pedestalTex.wrapS = THREE.MirroredRepeatWrapping;
+pedestalTex.wrapT = THREE.MirroredRepeatWrapping;
+pedestalTex.repeat.set(2, 1);
+
 function createVideo(url) {
     const v = document.createElement('video');
     v.src = url;
@@ -198,7 +205,7 @@ function setupEnvironmentTexture(videoElement) {
 const ceilingTex  = setupEnvironmentTexture(ceilingVid);
 const wallTex     = setupEnvironmentTexture(wallVid);
 const floorTex    = setupEnvironmentTexture(floorVid);
-const backWallTex = new THREE.VideoTexture(backWallVid); // Back projection planar texture
+const backWallTex = new THREE.VideoTexture(backWallVid); 
 backWallTex.colorSpace = THREE.SRGBColorSpace;
 
 // ────────────────────────────────────────────────
@@ -208,10 +215,16 @@ const hallWidth = 24;
 const hallHeight = 16;
 const hallLength = 200;
 
-const wallMatCommon = { roughness: 0.4, metalness: 0.1 };
+// Slightly increase lighting behind the videos utilizing emissive maps
+const wallMatCommon = { 
+    roughness: 0.4, 
+    metalness: 0.1, 
+    emissive: 0xffffff, 
+    emissiveIntensity: 0.4 
+};
 
 // Floor
-const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.2, ...wallMatCommon });
+const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, emissiveMap: floorTex, roughness: 0.2, ...wallMatCommon });
 const floorGeo = new THREE.PlaneGeometry(hallWidth, hallLength);
 const floor = new THREE.Mesh(floorGeo, floorMat);
 floor.rotation.x = -Math.PI / 2;
@@ -219,7 +232,7 @@ floor.position.set(0, 0, 0);
 scene.add(floor);
 
 // Ceiling
-const ceilingMat = new THREE.MeshStandardMaterial({ map: ceilingTex, roughness: 0.5, ...wallMatCommon });
+const ceilingMat = new THREE.MeshStandardMaterial({ map: ceilingTex, emissiveMap: ceilingTex, roughness: 0.5, ...wallMatCommon });
 const ceilingGeo = new THREE.PlaneGeometry(hallWidth, hallLength);
 const ceiling = new THREE.Mesh(ceilingGeo, ceilingMat);
 ceiling.rotation.x = Math.PI / 2;
@@ -227,27 +240,27 @@ ceiling.position.set(0, hallHeight, 0);
 scene.add(ceiling);
 
 // Left Wall
-const leftWallMat = new THREE.MeshStandardMaterial({ map: wallTex, roughness: 0.3, ...wallMatCommon });
+const leftWallMat = new THREE.MeshStandardMaterial({ map: wallTex, emissiveMap: wallTex, roughness: 0.3, ...wallMatCommon });
 const leftWallGeo = new THREE.PlaneGeometry(hallLength, hallHeight);
 const leftWall = new THREE.Mesh(leftWallGeo, leftWallMat);
 leftWall.rotation.y = Math.PI / 2;
 leftWall.position.set(-hallWidth / 2, hallHeight / 2, 0);
 scene.add(leftWall);
 
-// Right Wall (Mirrored texture configuration via matching alignment or wrapping mapping)
+// Right Wall
 const rightWallMat = leftWallMat.clone();
 rightWallMat.map = wallTex.clone();
 rightWallMat.map.wrapS = THREE.MirroredRepeatWrapping;
-// Flips the horizontal processing dynamically to act as a direct mirror reflection across the hall
 rightWallMat.map.repeat.set(-2, 1); 
+rightWallMat.emissiveMap = rightWallMat.map;
 
 const rightWall = new THREE.Mesh(leftWallGeo, rightWallMat);
 rightWall.rotation.y = -Math.PI / 2;
 rightWall.position.set(hallWidth / 2, hallHeight / 2, 0);
 scene.add(rightWall);
 
-// Back Wall (Terminal projection wall behind the pedestal altar space)
-const backWallMat = new THREE.MeshStandardMaterial({ map: backWallTex, roughness: 0.5 });
+// Back Wall 
+const backWallMat = new THREE.MeshStandardMaterial({ map: backWallTex, emissive: 0xffffff, emissiveMap: backWallTex, emissiveIntensity: 0.4, roughness: 0.5 });
 const backWallGeo = new THREE.PlaneGeometry(hallWidth, hallHeight);
 const backWall = new THREE.Mesh(backWallGeo, backWallMat);
 backWall.position.set(0, hallHeight / 2, -hallLength / 2);
@@ -256,10 +269,18 @@ scene.add(backWall);
 // ────────────────────────────────────────────────
 // Altar & Glass Slipper Artifact
 // ────────────────────────────────────────────────
-const centerSpaceZ = -20; // Focused zone for the slipper installation
+const centerSpaceZ = -20; 
 
 const standGroup = new THREE.Group();
-const stoneMat = new THREE.MeshStandardMaterial({ color: 0x111115, roughness: 0.8, metalness: 0.8 });
+const pedestalMat = new THREE.MeshStandardMaterial({ 
+    map: pedestalTex, 
+    roughness: 0.3, 
+    metalness: 0.5,
+    emissive: 0xffffff,
+    emissiveMap: pedestalTex,
+    emissiveIntensity: 0.15
+});
+
 const glassMat = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     metalness: 0.1,
@@ -274,17 +295,17 @@ const glassMat = new THREE.MeshPhysicalMaterial({
 });
 
 const baseGeo = new THREE.CylinderGeometry(2, 2.4, 0.8, 32);
-const base = new THREE.Mesh(baseGeo, stoneMat);
+const base = new THREE.Mesh(baseGeo, pedestalMat);
 base.position.y = 0.4;
 standGroup.add(base);
 
 const pillarGeo = new THREE.CylinderGeometry(1.4, 1.4, 3, 32);
-const pillar = new THREE.Mesh(pillarGeo, stoneMat);
+const pillar = new THREE.Mesh(pillarGeo, pedestalMat);
 pillar.position.y = 2.3;
 standGroup.add(pillar);
 
 const topGeo = new THREE.CylinderGeometry(2.2, 2.2, 0.3, 32);
-const top = new THREE.Mesh(topGeo, stoneMat);
+const top = new THREE.Mesh(topGeo, pedestalMat);
 top.position.y = 3.95;
 standGroup.add(top);
 standGroup.position.set(0, 0, centerSpaceZ);
